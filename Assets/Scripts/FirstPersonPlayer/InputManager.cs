@@ -1,4 +1,6 @@
+using System;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 public class InputManager : MonoBehaviour
 {
@@ -6,6 +8,7 @@ public class InputManager : MonoBehaviour
 
     public Vector2 PlayerMovement => playerControls.Player.Movement.ReadValue<Vector2>();
     public Vector2 PlayerMouseDelta => playerControls.Player.Look.ReadValue<Vector2>();
+    public InputAction PlayerInventorySlot => playerControls.Player.InventorySlot;
     public bool PlayerJumpedThisFrame => playerControls.Player.Jump.triggered;
     
     private void Awake()

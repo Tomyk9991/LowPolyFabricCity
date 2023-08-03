@@ -1,52 +1,63 @@
+using System.Collections.Generic;
+using FirstPersonPlayer.Statemachine;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 [RequireComponent(typeof(CharacterController))]
 public class PlayerController : MonoBehaviour
 {
+    [Header("Ground Settings")]
     [SerializeField] private InputManager inputManager;
     [SerializeField] private Transform cameraTransform;
     [SerializeField] private float rayLength = 0.2f;
     [SerializeField] private LayerMask groundedLayerMask;
 
     private GameObject hitObject;
-    private CharacterController controller;
     private Vector3 playerVelocity;
 
-    [SerializeField] private bool groundedPlayer;
+    [Header("Player movement Settings")]
     [SerializeField] private float playerSpeed = 2.0f;
     [SerializeField] private float jumpHeight = 1.0f;
     [SerializeField] private float gravityValue = -9.81f;
 
+    [Header("Grid Settings")]
+    [SerializeField] private float gridUnit = 1.0f;
+    [SerializeField] private RaycastOptions raycastOptions;
+    [SerializeField] private List<GameObject> inventoryPrefabs;
+    
     private Vector3 halfPlayerHeight;
+
+    private readonly PlayerStatemachineManager playerStatemachineManager = new();
 
     private void Start()
     {
-        this.controller = GetComponent<CharacterController>();
+        var movement = new MovementPlayerStatemachine(inputManager, cameraTransform, rayLength, groundedLayerMask, GetComponent<CharacterController>(), transform) 
+        {
+            PlayerSpeed = playerSpeed,
+            JumpHeight = jumpHeight,
+            GravityValue = gravityValue
+        };
         
-        this.halfPlayerHeight = new Vector3(0, controller.height / 2.0f, 0.0f);
+        playerStatemachineManager.AddState(movement);
+        playerStatemachineManager.AddState(new CursorStateMachine());
+        playerStatemachineManager.AddState(new GridPlaceStateMachine(inputManager, inventoryPrefabs, gridUnit, raycastOptions));
+
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
     }
 
     private void Update()
     {
-        groundedPlayer = Physics.Raycast(new Ray(transform.position - halfPlayerHeight, Vector3.down), rayLength, groundedLayerMask);
-        
-        if (groundedPlayer && playerVelocity.y < 0.0f)
-            playerVelocity.y = 0.1f;
-
-        Vector2 movement = inputManager.PlayerMovement;
-        Vector3 move = new Vector3(movement.x, 0f, movement.y);
-
-        move = cameraTransform.forward * move.z + cameraTransform.right * move.x;
-        move.y = 0.0f;
-        
-        controller.Move(move * (Time.deltaTime * playerSpeed));
-
-        if (inputManager.PlayerJumpedThisFrame && groundedPlayer)
+        if (Input.GetKeyDown(KeyCode.Escape))
         {
-            playerVelocity.y += Mathf.Sqrt(jumpHeight * -3.0f * gravityValue);
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
         }
 
-        playerVelocity.y += gravityValue * Time.deltaTime;
-        controller.Move(playerVelocity * Time.deltaTime);
+        for (int i = playerStatemachineManager.Length - 1; i >= 0; i--)
+        {
+            var stateMachine = playerStatemachineManager[i];
+            stateMachine.OnUpdate();
+        }
     }
 }

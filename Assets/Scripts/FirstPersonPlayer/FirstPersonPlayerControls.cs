@@ -53,6 +53,15 @@ public partial class @FirstPersonPlayerControls: IInputActionCollection2, IDispo
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""InventorySlot"",
+                    ""type"": ""Button"",
+                    ""id"": ""34812efa-fcbc-4703-9858-19b2265e9c11"",
+                    ""expectedControlType"": ""Button"",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
                 }
             ],
             ""bindings"": [
@@ -143,6 +152,116 @@ public partial class @FirstPersonPlayerControls: IInputActionCollection2, IDispo
                     ""action"": ""Look"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""e325bee3-9299-42b1-8c2a-b932245ddbde"",
+                    ""path"": ""<Keyboard>/1"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""InventorySlot"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""3004ba60-7b03-4440-bf8c-d0c235ddcd7c"",
+                    ""path"": ""<Keyboard>/2"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""InventorySlot"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""aa5a6fa7-1b05-419b-906b-c70b26d17dc9"",
+                    ""path"": ""<Keyboard>/3"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""InventorySlot"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""88ba0f8e-9dd0-402e-83e3-82c2dd663a60"",
+                    ""path"": ""<Keyboard>/4"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""InventorySlot"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""e2a9ebea-1359-4ac8-9e58-e5e32aa81ee9"",
+                    ""path"": ""<Keyboard>/5"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""InventorySlot"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""30922897-3a83-41f6-9dff-f4f83738b8a4"",
+                    ""path"": ""<Keyboard>/6"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""InventorySlot"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""2b1f84e2-27b3-47d0-84c8-d0ab2dae6f1e"",
+                    ""path"": ""<Keyboard>/7"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""InventorySlot"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""26820c7f-b2fb-4b2b-b5a2-535f5bf22b24"",
+                    ""path"": ""<Keyboard>/8"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""InventorySlot"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""e20f374d-db10-4611-9625-568ad9675900"",
+                    ""path"": ""<Keyboard>/9"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""InventorySlot"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""b6fc4d1f-b925-4af1-86ee-ff0614c9645c"",
+                    ""path"": ""<Keyboard>/0"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""InventorySlot"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
                 }
             ]
         }
@@ -154,6 +273,7 @@ public partial class @FirstPersonPlayerControls: IInputActionCollection2, IDispo
         m_Player_Movement = m_Player.FindAction("Movement", throwIfNotFound: true);
         m_Player_Jump = m_Player.FindAction("Jump", throwIfNotFound: true);
         m_Player_Look = m_Player.FindAction("Look", throwIfNotFound: true);
+        m_Player_InventorySlot = m_Player.FindAction("InventorySlot", throwIfNotFound: true);
     }
 
     public void Dispose()
@@ -218,6 +338,7 @@ public partial class @FirstPersonPlayerControls: IInputActionCollection2, IDispo
     private readonly InputAction m_Player_Movement;
     private readonly InputAction m_Player_Jump;
     private readonly InputAction m_Player_Look;
+    private readonly InputAction m_Player_InventorySlot;
     public struct PlayerActions
     {
         private @FirstPersonPlayerControls m_Wrapper;
@@ -225,6 +346,7 @@ public partial class @FirstPersonPlayerControls: IInputActionCollection2, IDispo
         public InputAction @Movement => m_Wrapper.m_Player_Movement;
         public InputAction @Jump => m_Wrapper.m_Player_Jump;
         public InputAction @Look => m_Wrapper.m_Player_Look;
+        public InputAction @InventorySlot => m_Wrapper.m_Player_InventorySlot;
         public InputActionMap Get() { return m_Wrapper.m_Player; }
         public void Enable() { Get().Enable(); }
         public void Disable() { Get().Disable(); }
@@ -243,6 +365,9 @@ public partial class @FirstPersonPlayerControls: IInputActionCollection2, IDispo
             @Look.started += instance.OnLook;
             @Look.performed += instance.OnLook;
             @Look.canceled += instance.OnLook;
+            @InventorySlot.started += instance.OnInventorySlot;
+            @InventorySlot.performed += instance.OnInventorySlot;
+            @InventorySlot.canceled += instance.OnInventorySlot;
         }
 
         private void UnregisterCallbacks(IPlayerActions instance)
@@ -256,6 +381,9 @@ public partial class @FirstPersonPlayerControls: IInputActionCollection2, IDispo
             @Look.started -= instance.OnLook;
             @Look.performed -= instance.OnLook;
             @Look.canceled -= instance.OnLook;
+            @InventorySlot.started -= instance.OnInventorySlot;
+            @InventorySlot.performed -= instance.OnInventorySlot;
+            @InventorySlot.canceled -= instance.OnInventorySlot;
         }
 
         public void RemoveCallbacks(IPlayerActions instance)
@@ -278,5 +406,6 @@ public partial class @FirstPersonPlayerControls: IInputActionCollection2, IDispo
         void OnMovement(InputAction.CallbackContext context);
         void OnJump(InputAction.CallbackContext context);
         void OnLook(InputAction.CallbackContext context);
+        void OnInventorySlot(InputAction.CallbackContext context);
     }
 }
