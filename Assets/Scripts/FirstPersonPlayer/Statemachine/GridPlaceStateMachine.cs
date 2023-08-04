@@ -15,6 +15,7 @@ namespace FirstPersonPlayer.Statemachine
     public class GridPlaceStateMachine : Statemachine
     {
         private readonly float gridUnit;
+        private readonly float gridOffset;
         private readonly InputManager inputManager;
         private readonly GameObject[] inventoryGameObjects;
         
@@ -25,11 +26,12 @@ namespace FirstPersonPlayer.Statemachine
 
         private bool selectedSomethingWithoutPreview = false;
 
-        public GridPlaceStateMachine(InputManager inputManager, List<GameObject> inventoryPrefabs, float gridUnit,
+        public GridPlaceStateMachine(InputManager inputManager, List<GameObject> inventoryPrefabs, float gridUnit, float gridOffset,
             RaycastOptions raycastOptions)
         {
             this.inputManager = inputManager;
             this.gridUnit = gridUnit;
+            this.gridOffset = gridOffset;
             this.raycastOptions = raycastOptions;
             inventoryGameObjects = new GameObject[inventoryPrefabs.Count];
             
@@ -79,7 +81,12 @@ namespace FirstPersonPlayer.Statemachine
                 if (currentPreviewGameObject.activeSelf == false)
                     currentPreviewGameObject.SetActive(true);
                 
-                currentPreviewGameObject.transform.position = hit.point;
+                var gridPosition = hit.point;
+                gridPosition.x = Mathf.CeilToInt(gridPosition.x) + gridOffset;
+                // gridPosition.y = 0;
+                gridPosition.z = Mathf.CeilToInt(gridPosition.z) + gridOffset;
+
+                currentPreviewGameObject.transform.position = gridPosition;
             }
             else
             {
