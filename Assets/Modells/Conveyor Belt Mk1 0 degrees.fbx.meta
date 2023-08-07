@@ -1,9 +1,14 @@
 fileFormatVersion: 2
-guid: c3f80514de0cffd4aaa129ff8f4443cf
+guid: 800aa3b43c48bdb49ace493a53ea9530
 ModelImporter:
   serializedVersion: 22200
   internalIDToNameTable: []
-  externalObjects: {}
+  externalObjects:
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Color Platte
+    second: {fileID: 2100000, guid: 4029f8b98e1f2a149a03a943f93a2be2, type: 2}
   materials:
     materialImportMode: 2
     materialName: 0
