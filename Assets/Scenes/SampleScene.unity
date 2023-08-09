@@ -487,8 +487,9 @@ GameObject:
   m_Component:
   - component: {fileID: 483559685}
   - component: {fileID: 483559686}
+  - component: {fileID: 483559687}
   m_Layer: 0
-  m_Name: InputManager
+  m_Name: Manager
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -521,6 +522,24 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f822c4d82b5fcd74fa2350b92e483622, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &483559687
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 483559684}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 76226385292b72a40a7cf6f701ef38ac, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  assemblyLinePrefab: {fileID: 919132149155446097, guid: 800aa3b43c48bdb49ace493a53ea9530,
+    type: 3}
+  assemblyLineCornerPrefab: {fileID: 919132149155446097, guid: 3b168d375f1c8004ebde328a1a23222a,
+    type: 3}
+  rotationOffset: 90
+  placementOffset: {x: -0.5, y: 0, z: -0.5}
 --- !u!1 &687453887
 GameObject:
   m_ObjectHideFlags: 0
@@ -1660,7 +1679,10 @@ MonoBehaviour:
       serializedVersion: 2
       m_Bits: 64
   inventoryPrefabs:
-  - {fileID: 919132149155446097, guid: c3f80514de0cffd4aaa129ff8f4443cf, type: 3}
+  - {fileID: 919132149155446097, guid: 800aa3b43c48bdb49ace493a53ea9530, type: 3}
+  - {fileID: 919132149155446097, guid: 3b168d375f1c8004ebde328a1a23222a, type: 3}
+  previewMaterial: {fileID: 2100000, guid: 418eacb575e629d449c049e844a744b1, type: 2}
+  assemblyLineManager: {fileID: 483559687}
 --- !u!1 &2063484811
 GameObject:
   m_ObjectHideFlags: 0
@@ -1748,7 +1770,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   horizontalSpeed: 10
   verticalSpeed: 10
-  clampAngle: 90
+  clampAngle: 89
   inputManager: {fileID: 483559686}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:

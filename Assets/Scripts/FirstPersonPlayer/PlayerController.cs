@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using FirstPersonPlayer.Statemachine;
+using GridPlacement;
 using UnityEngine;
 
 [RequireComponent(typeof(CharacterController))]
@@ -25,6 +26,10 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float gridOffset = 0.5f;
     [SerializeField] private RaycastOptions raycastOptions;
     [SerializeField] private List<GameObject> inventoryPrefabs;
+
+    [Header("Preview Settings")]
+    [SerializeField] private Material previewMaterial;
+    [SerializeField] private AssemblyLineManager assemblyLineManager;
     
     private Vector3 halfPlayerHeight;
 
@@ -41,7 +46,7 @@ public class PlayerController : MonoBehaviour
         
         playerStatemachineManager.AddState(movement);
         playerStatemachineManager.AddState(new CursorStateMachine());
-        playerStatemachineManager.AddState(new GridPlaceStateMachine(inputManager, inventoryPrefabs, gridUnit, gridOffset, raycastOptions));
+        playerStatemachineManager.AddState(new GridPlaceStateMachine(inputManager, inventoryPrefabs, gridUnit, previewMaterial, assemblyLineManager, gridOffset, raycastOptions));
 
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
