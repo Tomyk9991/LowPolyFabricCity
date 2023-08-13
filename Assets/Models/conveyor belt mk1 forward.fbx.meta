@@ -9,6 +9,11 @@ ModelImporter:
       assembly: UnityEngine.CoreModule
       name: Color Platte
     second: {fileID: 2100000, guid: 1ed988615cb7455408d6e40a2e734670, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Color Platte Metell
+    second: {fileID: 2100000, guid: f50b043cb0c1cd3409d98f11c7b59bd2, type: 2}
   materials:
     materialImportMode: 2
     materialName: 0
