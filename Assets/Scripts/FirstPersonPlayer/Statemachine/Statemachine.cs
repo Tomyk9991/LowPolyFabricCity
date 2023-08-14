@@ -7,6 +7,7 @@ namespace FirstPersonPlayer.Statemachine
     {
         public abstract void OnUpdate();
         public abstract void OnDisable();
+        public virtual void OnDrawGizmos() {}
         public bool RequestExit { get; protected set; }
     }
 

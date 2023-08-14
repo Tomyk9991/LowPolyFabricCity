@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using GridPlacement;
 using UnityEngine;
 
@@ -12,14 +13,37 @@ namespace FirstPersonPlayer.Statemachine
         public LayerMask HitLayerMask;
     }
 
+    [System.Serializable]
+    public class GridOptions
+    {
+        public float GridUnit { get; set; }
+        public float GridOffset { get; set; }
+    }
+
+    [System.Serializable]
+    public class GridPlaceManagers
+    {
+        public InputManager InputManager { get; set; }
+        public AssemblyLineManager AssemblyLineManager { get; set; }
+    }
+    
+    [System.Serializable]
+    public class PreviewOptions
+    {
+        public Material PreviewMaterial { get; set; }
+        public LineRenderer LineRenderer { get; set; }
+    }
+
     public class GridPlaceStateMachine : Statemachine
     {
-        private readonly float gridUnit;
-        private readonly float gridOffset;
-        private readonly InputManager inputManager;
+        private GridPlaceManagers managers;
+        private GridOptions gridOptions;
+        private PreviewOptions previewOptions;
+        
         private readonly GameObject[] inventoryGameObjects;
 
-        private readonly Material previewMaterial;
+        public bool SolutionA { get; set; } = true;
+
         private readonly Material previewMaterialInstance;
         
         private readonly RaycastOptions raycastOptions;
@@ -31,19 +55,19 @@ namespace FirstPersonPlayer.Statemachine
         private Vector3Int? currentGridPosition;
 
         private AssemblyLine line;
-        private AssemblyLineManager assemblyLineManager;
+
+        private Vector3Int? startGridPosition;
+        private Vector3Int? endGridPosition;
+        private List<Vector3Int> currentPreviewLine = new();
         
-        public GridPlaceStateMachine(InputManager inputManager, List<GameObject> inventoryPrefabs, float gridUnit, Material previewMaterial, AssemblyLineManager assemblyLineManager, float gridOffset,
-            RaycastOptions raycastOptions)
+        public GridPlaceStateMachine(GridPlaceManagers managers, List<GameObject> inventoryPrefabs, GridOptions gridOptions, PreviewOptions previewOptions, RaycastOptions raycastOptions)
         {
-            this.inputManager = inputManager;
-            this.gridUnit = gridUnit;
-            this.assemblyLineManager = assemblyLineManager;
-            this.gridOffset = gridOffset;
+            this.previewOptions = previewOptions;
+            this.managers = managers;
+            this.gridOptions = gridOptions;
             this.raycastOptions = raycastOptions;
-            previewMaterialInstance = new Material(previewMaterial);
             
-            
+            previewMaterialInstance = new Material(previewOptions.PreviewMaterial);
             inventoryGameObjects = new GameObject[inventoryPrefabs.Count];
             
             for (int i = 0; i < inventoryPrefabs.Count; i++)
@@ -68,10 +92,15 @@ namespace FirstPersonPlayer.Statemachine
             }
 
             if (inventoryGameObjects.Length > 0)
+            {
                 currentPreviewGameObject = inventoryGameObjects[0];
+                currentPreviewGameObject.SetActive(true);
+                selectedSomethingWithoutPreview = false;
+            }
             
-            inputManager.PlayerInventorySlotSelected += OnInventorySlotSelected;
-            inputManager.PlayerPlaceChanged += OnPlaceChanged;
+            managers.InputManager.PlayerInventorySlotSelected += OnInventorySlotSelected;
+            managers.InputManager.PlayerPlaceChanged += OnPlaceChanged;
+            managers.InputManager.PlayerPlacementSolutionChanged += (solution) => SolutionA = solution;
         }
 
         private void OnPlaceChanged(bool clickActive)
@@ -81,13 +110,15 @@ namespace FirstPersonPlayer.Statemachine
             // click begin
             if (clickActive)
             {
-                var (appendMode, assemblyLine) = assemblyLineManager.GetOrCreate(currentGridPosition.Value);
-                this.line = assemblyLine;
+                var (appendMode, assemblyLine) = managers.AssemblyLineManager.GetOrCreate(currentGridPosition.Value);
+                line = assemblyLine;
                 
                 if (appendMode == AppendMode.InsertFront)
-                    line.InsertFront(currentGridPosition.Value);
+                    line.InsertFront(currentGridPosition.Value, SolutionA);
                 else
-                    line.AddNode(currentGridPosition.Value);
+                    line.AddNode(currentGridPosition.Value, SolutionA);
+                
+                startGridPosition = currentGridPosition;
             }
 
             // click end
@@ -95,7 +126,13 @@ namespace FirstPersonPlayer.Statemachine
             {
                 // check if hits something
                 // if so, return bad
-                line.AddNode(currentGridPosition.Value);
+                line.AddNode(currentGridPosition.Value, SolutionA);
+                line = null;
+                
+                startGridPosition = null;
+                endGridPosition = null;
+                previewOptions.LineRenderer.positionCount = 0;
+                currentPreviewLine.Clear();
             }
         }
         
@@ -121,8 +158,8 @@ namespace FirstPersonPlayer.Statemachine
 
         public override void OnDisable()
         {
-            inputManager.PlayerInventorySlotSelected -= OnInventorySlotSelected;
-            inputManager.PlayerPlaceChanged -= OnPlaceChanged;
+            managers.InputManager.PlayerInventorySlotSelected -= OnInventorySlotSelected;
+            managers.InputManager.PlayerPlaceChanged -= OnPlaceChanged;
         }
         
         public override void OnUpdate()
@@ -131,8 +168,17 @@ namespace FirstPersonPlayer.Statemachine
 
             var gridPosition = CastRay();
 
+            CalculatePreviewLine();
+            SetPreviewObjectTransform(gridPosition);
+        }
+
+        private void SetPreviewObjectTransform(Vector3? gridPosition)
+        {
             if (gridPosition.HasValue)
             {
+                if (!currentPreviewGameObject.activeSelf)
+                    currentPreviewGameObject.SetActive(true);
+                
                 currentPreviewGameObject.transform.position = gridPosition.Value;
             }
             else
@@ -142,6 +188,25 @@ namespace FirstPersonPlayer.Statemachine
             }
         }
 
+        private void CalculatePreviewLine()
+        {
+            if (!currentGridPosition.HasValue || !startGridPosition.HasValue) return;
+            
+            this.currentPreviewLine = SolutionA
+                ? AssemblyLineManager.GetPointsBetweenV1(this.startGridPosition.Value,
+                    this.currentGridPosition.Value)
+                : AssemblyLineManager.GetPointsBetweenV2(this.startGridPosition.Value,
+                    this.currentGridPosition.Value);
+
+            this.previewOptions.LineRenderer.positionCount = currentPreviewLine.Count;
+            this.previewOptions.LineRenderer.SetPositions(currentPreviewLine.Select(
+                    a => new Vector3(a.x + gridOptions.GridOffset, a.y + 0.01f, a.z + + gridOptions.GridOffset)
+                ).ToArray()
+            );
+                
+            this.previewOptions.LineRenderer.Simplify(.1f);
+        }
+        
         /// <summary>
         /// Casts a ray from the player camera to the ground and returns the hit position
         /// </summary>
@@ -154,9 +219,9 @@ namespace FirstPersonPlayer.Statemachine
                 var gridPosition = hit.point;
                 currentGridPosition = new Vector3Int(Mathf.CeilToInt(gridPosition.x), 0, Mathf.CeilToInt(gridPosition.z));
                 
-                gridPosition.x = Mathf.CeilToInt(gridPosition.x) + gridOffset;
+                gridPosition.x = Mathf.CeilToInt(gridPosition.x) + gridOptions.GridOffset;
                 gridPosition.y = 0.0f; //Mathf.CeilToInt(gridPosition.y);
-                gridPosition.z = Mathf.CeilToInt(gridPosition.z) + gridOffset;
+                gridPosition.z = Mathf.CeilToInt(gridPosition.z) + gridOptions.GridOffset;
 
                 return gridPosition;
             }

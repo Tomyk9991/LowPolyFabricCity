@@ -9,33 +9,47 @@ namespace GridPlacement
         Append,
         InsertFront
     }
+
+    public class PointRotation
+    {
+        public Vector3Int Point { get; set; }
+        public Vector3 Rotation { get; set; }
+
+        public PointRotation(Vector3Int point, Vector3 rotation)
+        {
+            this.Point = point;
+            this.Rotation = rotation;
+        }
+    }
     
     public class AssemblyLine
     {
         public List<Vector3Int> Nodes { get; } = new();
+        public List<PointRotation> DiscretePoints { get; set; } = new();
+        
         public GameObject AttachedGameObject { get; private set; }
         
-        public event Action<AssemblyLine> OnAssemblyLineNodeAdded;
+        public event Action<AssemblyLine, bool> OnAssemblyLineNodeAdded;
         
         public AssemblyLine(GameObject gameObject)
         {
             AttachedGameObject = gameObject;
         }
         
-        public void AddNode(Vector3Int currentGridPosition)
+        public void AddNode(Vector3Int currentGridPosition, bool solutionA)
         {
             if (!Nodes.Contains(currentGridPosition))
                 Nodes.Add(currentGridPosition);
             
-            OnAssemblyLineNodeAdded?.Invoke(this);
+            OnAssemblyLineNodeAdded?.Invoke(this, solutionA);
         }
 
-        public void InsertFront(Vector3Int currentGridPosition)
+        public void InsertFront(Vector3Int currentGridPosition, bool solutionA)
         {
             if (!Nodes.Contains(currentGridPosition))
                 Nodes.Insert(0, currentGridPosition);
 
-            OnAssemblyLineNodeAdded?.Invoke(this);
+            OnAssemblyLineNodeAdded?.Invoke(this, solutionA);
         }
     }
 }

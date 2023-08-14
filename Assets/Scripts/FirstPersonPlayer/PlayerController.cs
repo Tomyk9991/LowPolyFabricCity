@@ -30,6 +30,8 @@ public class PlayerController : MonoBehaviour
     [Header("Preview Settings")]
     [SerializeField] private Material previewMaterial;
     [SerializeField] private AssemblyLineManager assemblyLineManager;
+    [SerializeField] private LineRenderer lineRenderer = null;
+    
     
     private Vector3 halfPlayerHeight;
 
@@ -46,7 +48,20 @@ public class PlayerController : MonoBehaviour
         
         playerStatemachineManager.AddState(movement);
         playerStatemachineManager.AddState(new CursorStateMachine());
-        playerStatemachineManager.AddState(new GridPlaceStateMachine(inputManager, inventoryPrefabs, gridUnit, previewMaterial, assemblyLineManager, gridOffset, raycastOptions));
+        playerStatemachineManager.AddState(new GridPlaceStateMachine(new GridPlaceManagers
+        {
+            InputManager = inputManager, 
+            AssemblyLineManager = assemblyLineManager
+        }, inventoryPrefabs, new GridOptions
+        {
+            GridUnit = gridUnit,
+            GridOffset = gridOffset
+        }, new PreviewOptions
+            {
+                PreviewMaterial = previewMaterial,
+                LineRenderer = lineRenderer
+            }, raycastOptions)
+        );
 
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
@@ -64,6 +79,14 @@ public class PlayerController : MonoBehaviour
         {
             var stateMachine = playerStatemachineManager[i];
             stateMachine.OnUpdate();
+        }
+    }
+
+    private void OnDrawGizmos()
+    {
+        foreach (var stateMachine in playerStatemachineManager)
+        {
+            stateMachine.OnDrawGizmos();
         }
     }
 }
