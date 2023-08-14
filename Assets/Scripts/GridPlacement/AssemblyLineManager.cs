@@ -81,23 +81,61 @@ namespace GridPlacement
 
                 var listPoints = solutionA ? GetPointsBetweenV1(first, second) : GetPointsBetweenV2(first, second);
 
+                Vector3Int? previousDirection = null;
+                
                 for (int j = 0; j < listPoints.Count; j++)
                 {
                     var point = listPoints[j];
                     var nextPoint = j == listPoints.Count - 1 ? listPoints[j - 1] : listPoints[j + 1];
                     
                     var localDirection = j == listPoints.Count - 1 ? point - nextPoint : nextPoint - point;
-                    var direction = GetCardinalDirection(Quaternion.LookRotation(localDirection));
+                    var lookRotation = Quaternion.LookRotation(localDirection);
 
-                    Debug.Log(direction);
-                    
+                    GameObject prefab = assemblyLinePrefab;
                     var finalRotation = Quaternion.identity;
+                    
+                    // corner
+                    bool isCorner = previousDirection.HasValue && previousDirection != localDirection;
 
-                    for (int k = 0; k < (int) direction; k++)
+                    var rotation = 0;
+                    if (isCorner)
+                    {
+                        prefab = assemblyLineCornerPrefab;
+                        var lr = Quaternion.LookRotation(localDirection);
+
+                        var angle = Vector3.SignedAngle((localDirection - previousDirection.Value), Vector3.right, Vector3.up);
+                        var c = GetCardinalDirection(lr);
+
+                        rotation = c switch
+                        {
+                            Direction.South when Mathf.Approximately(-135.0f, angle) => 3,
+                            Direction.West when Mathf.Approximately(135.0f, angle) => 0,
+                            Direction.North when Mathf.Approximately(45.0f, angle) => 1,
+                            Direction.East when Mathf.Approximately(-45.0f, angle) => 2,
+                            _ => GetCardinalDirection(lr) switch
+                            {
+                                Direction.North => 0,
+                                Direction.East => 1,
+                                Direction.South => 2,
+                                Direction.West => 3,
+                            }
+                        };
+                    }
+                    
+                    if (!isCorner)
+                    {
+                        var direction = GetCardinalDirection(lookRotation);
+                        rotation = (int)direction;
+                    }
+                    
+                    for (int k = 0; k < rotation; k++)
                         finalRotation *= Quaternion.Euler(0, rotationOffset, 0);
                     
-                    var current = Instantiate(assemblyLinePrefab, point + placementOffset, finalRotation, assemblyLine.AttachedGameObject.transform);
+                    var current = Instantiate(prefab, point + placementOffset, finalRotation, assemblyLine.AttachedGameObject.transform);
                     current.name = $"AssemblyLine {point}";
+
+
+                    previousDirection = localDirection;
                 }
 
                 var filtered = from tuple in allPoints select tuple.Point;

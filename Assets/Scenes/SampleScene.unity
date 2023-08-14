@@ -534,9 +534,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 76226385292b72a40a7cf6f701ef38ac, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  assemblyLinePrefab: {fileID: 919132149155446097, guid: 800aa3b43c48bdb49ace493a53ea9530,
+  assemblyLinePrefab: {fileID: 919132149155446097, guid: 9f3d6ac33b114894abb1417cb1f352e4,
     type: 3}
-  assemblyLineCornerPrefab: {fileID: 919132149155446097, guid: 3b168d375f1c8004ebde328a1a23222a,
+  assemblyLineCornerPrefab: {fileID: 919132149155446097, guid: f3d2e45dd13f9474996e657153e5ee98,
     type: 3}
   rotationOffset: 90
   placementOffset: {x: -0.5, y: 0, z: -0.5}
@@ -1816,8 +1816,8 @@ MonoBehaviour:
       serializedVersion: 2
       m_Bits: 64
   inventoryPrefabs:
-  - {fileID: 919132149155446097, guid: 800aa3b43c48bdb49ace493a53ea9530, type: 3}
-  - {fileID: 919132149155446097, guid: 3b168d375f1c8004ebde328a1a23222a, type: 3}
+  - {fileID: 919132149155446097, guid: f3d2e45dd13f9474996e657153e5ee98, type: 3}
+  - {fileID: 919132149155446097, guid: 9f3d6ac33b114894abb1417cb1f352e4, type: 3}
   previewMaterial: {fileID: 2100000, guid: 418eacb575e629d449c049e844a744b1, type: 2}
   assemblyLineManager: {fileID: 483559687}
   lineRenderer: {fileID: 1477381981}
