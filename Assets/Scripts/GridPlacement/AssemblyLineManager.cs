@@ -29,8 +29,8 @@ namespace GridPlacement
         [SerializeField] private Vector3 placementOffset = new(-0.5f, 0, -0.5f);
 
         [Header("Debug")]
-        [SerializeField] private Transform targetA = null;
-        [SerializeField] private Transform targetB = null;
+        [SerializeField] private Transform targetA;
+        [SerializeField] private Transform targetB;
         
 
 
@@ -47,8 +47,11 @@ namespace GridPlacement
                 if (currentGridPosition == last)
                     return (AppendMode.Append, assemblyLine);
             }
-
-            var line = new AssemblyLine(new GameObject());
+            
+            var line = new AssemblyLine(new GameObject
+            {
+                name = $"AssemblyLine {currentGridPosition}"
+            });
             line.OnAssemblyLineNodeAdded += OnAssemblyLineNodeAdded;
 
             assemblyLines.Add(line);
@@ -57,6 +60,8 @@ namespace GridPlacement
 
         private void OnAssemblyLineNodeAdded(AssemblyLine assemblyLine, bool solutionA)
         {
+            if (!assemblyLine.Finished) return;
+            
             // remove every child in gameobject so it can be build from ground up
             // this is a temporary solution
             foreach (Transform child in assemblyLine.AttachedGameObject.transform)
@@ -119,6 +124,7 @@ namespace GridPlacement
                                 Direction.East => 1,
                                 Direction.South => 2,
                                 Direction.West => 3,
+                                _ => throw new ArgumentOutOfRangeException()
                             }
                         };
                     }

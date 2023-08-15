@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
-using GridPlacement;
 using GridPlacement.PlaceTypes;
 using UnityEngine;
+using UnityEngine.Assertions;
 
 namespace FirstPersonPlayer.Statemachine
 {
@@ -22,12 +22,10 @@ namespace FirstPersonPlayer.Statemachine
     
     public class GridPlaceStateMachine : Statemachine
     {
-        private InputManager inputManager;
-        private GridOptions gridOptions;
+        private readonly InputManager inputManager;
+        private readonly GridOptions gridOptions;
         private readonly GameObject[] inventoryGameObjects;
 
-        private readonly Material previewMaterialInstance;
-        
         private readonly RaycastOptions raycastOptions;
 
         private GameObject currentPreviewGameObject;
@@ -36,15 +34,16 @@ namespace FirstPersonPlayer.Statemachine
         private bool selectedSomethingWithoutPreview;
         private Vector3Int? currentGridPosition;
         
-        private List<IPlaceType> placeTypes = new();
+        private readonly List<IPlaceType> placeTypes = new();
+        private IPlaceType currentlyActivePlaceType = null;
         
-        public GridPlaceStateMachine(InputManager inputManager, List<GameObject> inventoryPrefabs, GridOptions gridOptions, Material previewMaterial, RaycastOptions raycastOptions)
+        public GridPlaceStateMachine(InputManager inputManager, IReadOnlyList<GameObject> inventoryPrefabs, GridOptions gridOptions, Material previewMaterial, RaycastOptions raycastOptions)
         {
             this.inputManager = inputManager;
             this.gridOptions = gridOptions;
             this.raycastOptions = raycastOptions;
             
-            previewMaterialInstance = new Material(previewMaterial);
+            var previewMaterialInstance = new Material(previewMaterial);
             inventoryGameObjects = new GameObject[inventoryPrefabs.Count];
             
             for (int i = 0; i < inventoryPrefabs.Count; i++)
@@ -67,7 +66,7 @@ namespace FirstPersonPlayer.Statemachine
                 current.SetActive(false);
                 inventoryGameObjects[i] = current;
             }
-
+            
             if (inventoryGameObjects.Length > 0)
             {
                 currentPreviewGameObject = inventoryGameObjects[0];
@@ -86,20 +85,12 @@ namespace FirstPersonPlayer.Statemachine
             // click begin
             if (clickActive)
             {
-                foreach (IPlaceType placeType in placeTypes)
-                {
-                    placeType.OnClickTriggered(currentGridPosition.Value);
-                }
+                currentlyActivePlaceType.OnClickTriggered(currentGridPosition.Value);
+                return;
             }
 
             // click end
-            if (!clickActive)
-            {
-                foreach (IPlaceType placeType in placeTypes)
-                {
-                    placeType.OnClickReleased(currentGridPosition.Value);
-                }
-            }
+            currentlyActivePlaceType.OnClickReleased(currentGridPosition.Value);
         }
         
         
@@ -119,13 +110,14 @@ namespace FirstPersonPlayer.Statemachine
             selectedSomethingWithoutPreview = false;
             
             currentPreviewGameObject = inventoryGameObjects[currentInventorySlot];
+            currentlyActivePlaceType = placeTypes[currentInventorySlot];
             currentPreviewGameObject.SetActive(true);
         }
 
         public override void OnDisable()
         {
-            this.inputManager.PlayerInventorySlotSelected -= OnInventorySlotSelected;
-            this.inputManager.PlayerPlaceChanged -= OnPlaceChanged;
+            inputManager.PlayerInventorySlotSelected -= OnInventorySlotSelected;
+            inputManager.PlayerPlaceChanged -= OnPlaceChanged;
         }
         
         public override void OnUpdate()
@@ -133,9 +125,7 @@ namespace FirstPersonPlayer.Statemachine
             if (selectedSomethingWithoutPreview) return;
 
             var gridPosition = CastRay();
-
-            foreach (var type in placeTypes)
-                type.OnUpdate(this.currentGridPosition);
+            currentlyActivePlaceType.OnUpdate(currentGridPosition);
             
             SetPreviewObjectTransform(gridPosition);
         }
@@ -182,6 +172,7 @@ namespace FirstPersonPlayer.Statemachine
         public void AddPlaceType(IPlaceType newType)
         {
             placeTypes.Add(newType);
+            currentlyActivePlaceType = placeTypes[currentInventorySlot];
         }
     }
 }
