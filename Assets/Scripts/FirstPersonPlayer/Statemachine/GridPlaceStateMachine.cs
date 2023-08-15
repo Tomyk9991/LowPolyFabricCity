@@ -1,7 +1,9 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using GridPlacement;
+using GridPlacement.PlaceTypes;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace FirstPersonPlayer.Statemachine
 {
@@ -16,24 +18,10 @@ namespace FirstPersonPlayer.Statemachine
     [System.Serializable]
     public class GridOptions
     {
-        public float GridUnit { get; set; }
-        public float GridOffset { get; set; }
-    }
-
-    [System.Serializable]
-    public class GridPlaceManagers
-    {
-        public InputManager InputManager { get; set; }
-        public AssemblyLineManager AssemblyLineManager { get; set; }
+        public float gridUnit;
+        public float gridOffset;
     }
     
-    [System.Serializable]
-    public class PreviewOptions
-    {
-        public Material PreviewMaterial { get; set; }
-        public LineRenderer LineRenderer { get; set; }
-    }
-
     public class GridPlaceStateMachine : Statemachine
     {
         private GridPlaceManagers managers;
@@ -42,7 +30,7 @@ namespace FirstPersonPlayer.Statemachine
         
         private readonly GameObject[] inventoryGameObjects;
 
-        public bool SolutionA { get; set; } = true;
+        private bool SolutionA { get; set; } = true;
 
         private readonly Material previewMaterialInstance;
         
@@ -59,6 +47,8 @@ namespace FirstPersonPlayer.Statemachine
         private Vector3Int? startGridPosition;
         private Vector3Int? endGridPosition;
         private List<Vector3Int> currentPreviewLine = new();
+
+        private List<IPlaceType> placeTypes = new();
         
         public GridPlaceStateMachine(GridPlaceManagers managers, List<GameObject> inventoryPrefabs, GridOptions gridOptions, PreviewOptions previewOptions, RaycastOptions raycastOptions)
         {
@@ -100,7 +90,6 @@ namespace FirstPersonPlayer.Statemachine
             
             managers.InputManager.PlayerInventorySlotSelected += OnInventorySlotSelected;
             managers.InputManager.PlayerPlaceChanged += OnPlaceChanged;
-            managers.InputManager.PlayerPlacementSolutionChanged += (solution) => SolutionA = solution;
         }
 
         private void OnPlaceChanged(bool clickActive)
@@ -110,6 +99,11 @@ namespace FirstPersonPlayer.Statemachine
             // click begin
             if (clickActive)
             {
+                // foreach (IPlaceType placeType in placeTypes)
+                // {
+                //     placeType.OnClickTriggered(currentGridPosition.Value);
+                // }
+                
                 var (appendMode, assemblyLine) = managers.AssemblyLineManager.GetOrCreate(currentGridPosition.Value);
                 line = assemblyLine;
                 
@@ -124,6 +118,10 @@ namespace FirstPersonPlayer.Statemachine
             // click end
             if (!clickActive)
             {
+                // foreach (IPlaceType placeType in placeTypes)
+                // {
+                //     placeType.OnClickReleased(currentGridPosition.Value);
+                // }
                 // check if hits something
                 // if so, return bad
                 line.AddNode(currentGridPosition.Value, SolutionA);
@@ -200,7 +198,7 @@ namespace FirstPersonPlayer.Statemachine
 
             this.previewOptions.LineRenderer.positionCount = currentPreviewLine.Count;
             this.previewOptions.LineRenderer.SetPositions(currentPreviewLine.Select(
-                    a => new Vector3(a.x + gridOptions.GridOffset, a.y + 0.01f, a.z + + gridOptions.GridOffset)
+                    a => new Vector3(a.x + gridOptions.gridOffset, a.y + 0.01f, a.z + + gridOptions.gridOffset)
                 ).ToArray()
             );
                 
@@ -219,15 +217,20 @@ namespace FirstPersonPlayer.Statemachine
                 var gridPosition = hit.point;
                 currentGridPosition = new Vector3Int(Mathf.CeilToInt(gridPosition.x), 0, Mathf.CeilToInt(gridPosition.z));
                 
-                gridPosition.x = Mathf.CeilToInt(gridPosition.x) + gridOptions.GridOffset;
+                gridPosition.x = Mathf.CeilToInt(gridPosition.x) + gridOptions.gridOffset;
                 gridPosition.y = 0.0f; //Mathf.CeilToInt(gridPosition.y);
-                gridPosition.z = Mathf.CeilToInt(gridPosition.z) + gridOptions.GridOffset;
+                gridPosition.z = Mathf.CeilToInt(gridPosition.z) + gridOptions.gridOffset;
 
                 return gridPosition;
             }
 
             this.currentGridPosition = null;
             return null;
+        }
+
+        public void AddPlaceType(IPlaceType newType)
+        {
+            placeTypes.Add(newType);
         }
     }
 }

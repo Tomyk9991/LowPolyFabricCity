@@ -1,8 +1,29 @@
 using System;
 using System.Collections.Generic;
+using Common.Managers;
 using FirstPersonPlayer.Statemachine;
 using GridPlacement;
 using UnityEngine;
+using UnityEngine.Serialization;
+
+
+[System.Serializable]
+public class PlaceTypeGrepper
+{
+    /// <summary>
+    /// the managers, which is responsible for the needed data
+    /// </summary>
+    [FormerlySerializedAs("manager")] public List<Manager> managers;
+    /// <summary>
+    ///  all prefabs which are bound to the keys 0-9. For example using key 1 will place the second prefab in this list
+    /// </summary>
+    public List<GameObject> keyBoundPrefabs;
+
+    public Material previewMaterial;
+    public GameObject previewPrefab;
+
+    public GridOptions gridOptions;
+}
 
 [RequireComponent(typeof(CharacterController))]
 public class PlayerController : MonoBehaviour
@@ -31,6 +52,8 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private Material previewMaterial;
     [SerializeField] private AssemblyLineManager assemblyLineManager;
     [SerializeField] private LineRenderer lineRenderer = null;
+
+    [SerializeField] private List<PlaceTypeGrepper> placeTypes = null;
     
     
     private Vector3 halfPlayerHeight;
@@ -45,23 +68,27 @@ public class PlayerController : MonoBehaviour
             JumpHeight = jumpHeight,
             GravityValue = gravityValue
         };
-        
-        playerStatemachineManager.AddState(movement);
-        playerStatemachineManager.AddState(new CursorStateMachine());
-        playerStatemachineManager.AddState(new GridPlaceStateMachine(new GridPlaceManagers
+
+        var gridPlaceStateMachine = new GridPlaceStateMachine(new GridPlaceManagers
         {
-            InputManager = inputManager, 
+            InputManager = inputManager,
             AssemblyLineManager = assemblyLineManager
         }, inventoryPrefabs, new GridOptions
         {
-            GridUnit = gridUnit,
-            GridOffset = gridOffset
+            gridUnit = gridUnit,
+            gridOffset = gridOffset
         }, new PreviewOptions
-            {
-                PreviewMaterial = previewMaterial,
-                LineRenderer = lineRenderer
-            }, raycastOptions)
-        );
+        {
+            PreviewMaterial = previewMaterial,
+            LineRenderer = lineRenderer
+        }, raycastOptions);
+
+        
+        gridPlaceStateMachine.AddPlaceType(new ConveyorBeltPlaceType(placeTypes[0]));
+        
+        playerStatemachineManager.AddState(movement);
+        playerStatemachineManager.AddState(new CursorStateMachine());
+        playerStatemachineManager.AddState(gridPlaceStateMachine);
 
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;

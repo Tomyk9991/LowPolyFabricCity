@@ -1,8 +1,9 @@
 using System;
+using Common.Managers;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-public class InputManager : MonoBehaviour
+public class InputManager : Manager
 {
     private FirstPersonPlayerControls playerControls;
 

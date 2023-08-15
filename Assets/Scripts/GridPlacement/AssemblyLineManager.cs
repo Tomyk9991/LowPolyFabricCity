@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Common.Managers;
 using UnityEngine;
 using Quaternion = UnityEngine.Quaternion;
 using Vector3 = UnityEngine.Vector3;
@@ -15,7 +16,7 @@ namespace GridPlacement
         North,
     }
     
-    public class AssemblyLineManager : MonoBehaviour
+    public class AssemblyLineManager : Manager
     {
         private readonly List<AssemblyLine> assemblyLines = new();
 
