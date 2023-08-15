@@ -1,9 +1,7 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
 using GridPlacement;
 using GridPlacement.PlaceTypes;
 using UnityEngine;
-using UnityEngine.Serialization;
 
 namespace FirstPersonPlayer.Statemachine
 {
@@ -24,13 +22,9 @@ namespace FirstPersonPlayer.Statemachine
     
     public class GridPlaceStateMachine : Statemachine
     {
-        private GridPlaceManagers managers;
+        private InputManager inputManager;
         private GridOptions gridOptions;
-        private PreviewOptions previewOptions;
-        
         private readonly GameObject[] inventoryGameObjects;
-
-        private bool SolutionA { get; set; } = true;
 
         private readonly Material previewMaterialInstance;
         
@@ -41,23 +35,16 @@ namespace FirstPersonPlayer.Statemachine
 
         private bool selectedSomethingWithoutPreview;
         private Vector3Int? currentGridPosition;
-
-        private AssemblyLine line;
-
-        private Vector3Int? startGridPosition;
-        private Vector3Int? endGridPosition;
-        private List<Vector3Int> currentPreviewLine = new();
-
+        
         private List<IPlaceType> placeTypes = new();
         
-        public GridPlaceStateMachine(GridPlaceManagers managers, List<GameObject> inventoryPrefabs, GridOptions gridOptions, PreviewOptions previewOptions, RaycastOptions raycastOptions)
+        public GridPlaceStateMachine(InputManager inputManager, List<GameObject> inventoryPrefabs, GridOptions gridOptions, Material previewMaterial, RaycastOptions raycastOptions)
         {
-            this.previewOptions = previewOptions;
-            this.managers = managers;
+            this.inputManager = inputManager;
             this.gridOptions = gridOptions;
             this.raycastOptions = raycastOptions;
             
-            previewMaterialInstance = new Material(previewOptions.PreviewMaterial);
+            previewMaterialInstance = new Material(previewMaterial);
             inventoryGameObjects = new GameObject[inventoryPrefabs.Count];
             
             for (int i = 0; i < inventoryPrefabs.Count; i++)
@@ -88,8 +75,8 @@ namespace FirstPersonPlayer.Statemachine
                 selectedSomethingWithoutPreview = false;
             }
             
-            managers.InputManager.PlayerInventorySlotSelected += OnInventorySlotSelected;
-            managers.InputManager.PlayerPlaceChanged += OnPlaceChanged;
+            this.inputManager.PlayerInventorySlotSelected += OnInventorySlotSelected;
+            this.inputManager.PlayerPlaceChanged += OnPlaceChanged;
         }
 
         private void OnPlaceChanged(bool clickActive)
@@ -99,38 +86,19 @@ namespace FirstPersonPlayer.Statemachine
             // click begin
             if (clickActive)
             {
-                // foreach (IPlaceType placeType in placeTypes)
-                // {
-                //     placeType.OnClickTriggered(currentGridPosition.Value);
-                // }
-                
-                var (appendMode, assemblyLine) = managers.AssemblyLineManager.GetOrCreate(currentGridPosition.Value);
-                line = assemblyLine;
-                
-                if (appendMode == AppendMode.InsertFront)
-                    line.InsertFront(currentGridPosition.Value, SolutionA);
-                else
-                    line.AddNode(currentGridPosition.Value, SolutionA);
-                
-                startGridPosition = currentGridPosition;
+                foreach (IPlaceType placeType in placeTypes)
+                {
+                    placeType.OnClickTriggered(currentGridPosition.Value);
+                }
             }
 
             // click end
             if (!clickActive)
             {
-                // foreach (IPlaceType placeType in placeTypes)
-                // {
-                //     placeType.OnClickReleased(currentGridPosition.Value);
-                // }
-                // check if hits something
-                // if so, return bad
-                line.AddNode(currentGridPosition.Value, SolutionA);
-                line = null;
-                
-                startGridPosition = null;
-                endGridPosition = null;
-                previewOptions.LineRenderer.positionCount = 0;
-                currentPreviewLine.Clear();
+                foreach (IPlaceType placeType in placeTypes)
+                {
+                    placeType.OnClickReleased(currentGridPosition.Value);
+                }
             }
         }
         
@@ -156,8 +124,8 @@ namespace FirstPersonPlayer.Statemachine
 
         public override void OnDisable()
         {
-            managers.InputManager.PlayerInventorySlotSelected -= OnInventorySlotSelected;
-            managers.InputManager.PlayerPlaceChanged -= OnPlaceChanged;
+            this.inputManager.PlayerInventorySlotSelected -= OnInventorySlotSelected;
+            this.inputManager.PlayerPlaceChanged -= OnPlaceChanged;
         }
         
         public override void OnUpdate()
@@ -166,7 +134,9 @@ namespace FirstPersonPlayer.Statemachine
 
             var gridPosition = CastRay();
 
-            CalculatePreviewLine();
+            foreach (var type in placeTypes)
+                type.OnUpdate(this.currentGridPosition);
+            
             SetPreviewObjectTransform(gridPosition);
         }
 
@@ -184,25 +154,6 @@ namespace FirstPersonPlayer.Statemachine
                 if (currentPreviewGameObject.activeSelf)
                     currentPreviewGameObject.SetActive(false);
             }
-        }
-
-        private void CalculatePreviewLine()
-        {
-            if (!currentGridPosition.HasValue || !startGridPosition.HasValue) return;
-            
-            this.currentPreviewLine = SolutionA
-                ? AssemblyLineManager.GetPointsBetweenV1(this.startGridPosition.Value,
-                    this.currentGridPosition.Value)
-                : AssemblyLineManager.GetPointsBetweenV2(this.startGridPosition.Value,
-                    this.currentGridPosition.Value);
-
-            this.previewOptions.LineRenderer.positionCount = currentPreviewLine.Count;
-            this.previewOptions.LineRenderer.SetPositions(currentPreviewLine.Select(
-                    a => new Vector3(a.x + gridOptions.gridOffset, a.y + 0.01f, a.z + + gridOptions.gridOffset)
-                ).ToArray()
-            );
-                
-            this.previewOptions.LineRenderer.Simplify(.1f);
         }
         
         /// <summary>

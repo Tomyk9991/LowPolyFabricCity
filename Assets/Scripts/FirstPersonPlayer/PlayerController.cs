@@ -50,9 +50,6 @@ public class PlayerController : MonoBehaviour
 
     [Header("Preview Settings")]
     [SerializeField] private Material previewMaterial;
-    [SerializeField] private AssemblyLineManager assemblyLineManager;
-    [SerializeField] private LineRenderer lineRenderer = null;
-
     [SerializeField] private List<PlaceTypeGrepper> placeTypes = null;
     
     
@@ -69,19 +66,14 @@ public class PlayerController : MonoBehaviour
             GravityValue = gravityValue
         };
 
-        var gridPlaceStateMachine = new GridPlaceStateMachine(new GridPlaceManagers
-        {
-            InputManager = inputManager,
-            AssemblyLineManager = assemblyLineManager
-        }, inventoryPrefabs, new GridOptions
-        {
-            gridUnit = gridUnit,
-            gridOffset = gridOffset
-        }, new PreviewOptions
-        {
-            PreviewMaterial = previewMaterial,
-            LineRenderer = lineRenderer
-        }, raycastOptions);
+        var gridPlaceStateMachine = new GridPlaceStateMachine(inputManager, inventoryPrefabs, 
+            new GridOptions
+            {
+                gridUnit = gridUnit,
+                gridOffset = gridOffset
+            }, 
+            previewMaterial, raycastOptions
+        );
 
         
         gridPlaceStateMachine.AddPlaceType(new ConveyorBeltPlaceType(placeTypes[0]));
