@@ -1,9 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using Common.Managers;
+using Unity.VisualScripting;
 using UnityEngine;
-using Quaternion = UnityEngine.Quaternion;
 using Vector3 = UnityEngine.Vector3;
 
 namespace GridPlacement
@@ -31,15 +30,19 @@ namespace GridPlacement
         [Header("Debug")]
         [SerializeField] private Transform targetA;
         [SerializeField] private Transform targetB;
-        
 
+        public void Awake()
+        {
+            AssemblyLine.rotationOffset = this.rotationOffset;
+        }
+        
 
         public (AppendMode, AssemblyLine) GetOrCreate(Vector3Int currentGridPosition)
         {
             foreach (var assemblyLine in assemblyLines)
             {
-                var first = assemblyLine.Nodes.First();
-                var last = assemblyLine.Nodes.Last();
+                var first = assemblyLine.Connections[0].Start;
+                var last = assemblyLine.Connections[^1].End;
 
                 if (currentGridPosition == first)
                     return (AppendMode.InsertFront, assemblyLine);
@@ -58,7 +61,7 @@ namespace GridPlacement
             return (AppendMode.Append, line);
         }
 
-        private void OnAssemblyLineNodeAdded(AssemblyLine assemblyLine, bool solutionA)
+        private void OnAssemblyLineNodeAdded(AssemblyLine assemblyLine)
         {
             if (!assemblyLine.Finished) return;
             
@@ -67,168 +70,46 @@ namespace GridPlacement
             foreach (Transform child in assemblyLine.AttachedGameObject.transform)
                 Destroy(child.gameObject);
 
-            if (assemblyLine.Nodes.Count == 1)
-            {
-                var point = assemblyLine.Nodes[0];
-                var current = Instantiate(assemblyLinePrefab, point + placementOffset, Quaternion.identity, assemblyLine.AttachedGameObject.transform);
-                current.name = $"AssemblyLine {point}";
-
-                assemblyLine.DiscretePoints = new List<PointRotation>
-                {
-                    new(point, Quaternion.identity.eulerAngles)
-                };
-            }
+            var meshesCount = assemblyLine.Connections.Sum(t => t.DiscretePoints.Count);
             
-            var allPoints = new List<PointRotation>();
-            for (int i = 0; i < assemblyLine.Nodes.Count - 1; i++)
-            {
-                var first = assemblyLine.Nodes[i];
-                var second = assemblyLine.Nodes[i + 1];
-
-                var listPoints = solutionA ? GetPointsBetweenV1(first, second) : GetPointsBetweenV2(first, second);
-
-                Vector3Int? previousDirection = null;
-                
-                for (int j = 0; j < listPoints.Count; j++)
-                {
-                    var point = listPoints[j];
-                    var nextPoint = j == listPoints.Count - 1 ? listPoints[j - 1] : listPoints[j + 1];
-                    
-                    var localDirection = j == listPoints.Count - 1 ? point - nextPoint : nextPoint - point;
-                    var lookRotation = Quaternion.LookRotation(localDirection);
-
-                    GameObject prefab = assemblyLinePrefab;
-                    var finalRotation = Quaternion.identity;
-                    
-                    // corner
-                    bool isCorner = previousDirection.HasValue && previousDirection != localDirection;
-
-                    var rotation = 0;
-                    if (isCorner)
-                    {
-                        prefab = assemblyLineCornerPrefab;
-                        var lr = Quaternion.LookRotation(localDirection);
-
-                        var angle = Vector3.SignedAngle((localDirection - previousDirection.Value), Vector3.right, Vector3.up);
-                        var c = GetCardinalDirection(lr);
-
-                        rotation = c switch
-                        {
-                            Direction.South when Mathf.Approximately(-135.0f, angle) => 3,
-                            Direction.West when Mathf.Approximately(135.0f, angle) => 0,
-                            Direction.North when Mathf.Approximately(45.0f, angle) => 1,
-                            Direction.East when Mathf.Approximately(-45.0f, angle) => 2,
-                            _ => GetCardinalDirection(lr) switch
-                            {
-                                Direction.North => 0,
-                                Direction.East => 1,
-                                Direction.South => 2,
-                                Direction.West => 3,
-                                _ => throw new ArgumentOutOfRangeException()
-                            }
-                        };
-                    }
-                    
-                    if (!isCorner)
-                    {
-                        var direction = GetCardinalDirection(lookRotation);
-                        rotation = (int)direction;
-                    }
-                    
-                    for (int k = 0; k < rotation; k++)
-                        finalRotation *= Quaternion.Euler(0, rotationOffset, 0);
-                    
-                    var current = Instantiate(prefab, point + placementOffset, finalRotation, assemblyLine.AttachedGameObject.transform);
-                    current.name = $"AssemblyLine {point}";
-
-
-                    previousDirection = localDirection;
-                }
-
-                var filtered = from tuple in allPoints select tuple.Point;
-                
-                foreach (var point in listPoints.Where(point => !filtered.Contains(point)))
-                    allPoints.Add(new PointRotation(point, Quaternion.identity.eulerAngles));
-            }
-
-            assemblyLine.DiscretePoints = allPoints;
-        }
-
-        private static Direction GetCardinalDirection(Quaternion rotation)
-        {
-            Vector3 forward = rotation * Vector3.forward;
-            float angle = Vector3.SignedAngle(Vector3.forward, forward, Vector3.up);
-
-            return angle switch
-            {
-                >= -45f and < 45f => Direction.North,
-                >= 45f and < 135f => Direction.East,
-                >= -135f and < -45f => Direction.West,
-                _ => Direction.South
+            MeshFilter[] meshFilters = new MeshFilter[meshesCount];
+            CombineInstance[] combine = new CombineInstance[meshFilters.Length];
+            Mesh[] meshInstances = {
+                assemblyLinePrefab.GetComponent<MeshFilter>().sharedMesh,
+                assemblyLineCornerPrefab.GetComponent<MeshFilter>().sharedMesh
             };
+            
+            int i = 0;
+            foreach (Connection connection in assemblyLine.Connections)
+            {
+                foreach (PointRotation pointRotation in connection.DiscretePoints)
+                {
+                    var point = pointRotation.Point;
+                    var finalRotation = pointRotation.Rotation;
+                    int prefabInstanceIndex = 0;
+                    
+                    if (pointRotation.IsCorner)
+                        prefabInstanceIndex = 1;
+                    
+                    combine[i].mesh = meshInstances[prefabInstanceIndex];
+                    combine[i].transform = Matrix4x4.TRS(point + placementOffset, finalRotation, Vector3.one);
+                    
+                    // var current = Instantiate(prefabInstanceIndex, point + placementOffset, finalRotation, assemblyLine.AttachedGameObject.transform);
+                    // current.name = $"AssemblyLine {point}";
+                    i++;
+                }
+            }
+
+
+            Mesh mesh = new Mesh();
+            mesh.CombineMeshes(combine);
+            
+            if (assemblyLine.AttachedGameObject.GetComponent<MeshFilter>() == null)
+                assemblyLine.AttachedGameObject.AddComponent<MeshFilter>();
+            
+            assemblyLine.AttachedGameObject.GetComponent<MeshFilter>().sharedMesh = mesh;
         }
         
-        public static List<Vector3Int> GetPointsBetweenV1(Vector3Int first, Vector3Int second)
-        {
-            List<Vector3Int> points = new List<Vector3Int>();
-            
-            var direction = second - first;
-            
-            // get all discrete integer points between first and second moving like in a manhattan distance
-            for (int j = 0; j <= Mathf.Abs(direction.x); j++)
-            {
-                var target = new Vector3Int(first.x + j * Math.Sign(direction.x), first.y, first.z);
-                if (!points.Contains(target))
-                    points.Add(target);
-            }
-
-            for (int j = 0; j <= Mathf.Abs(direction.y); j++)
-            {
-                var target = new Vector3Int(second.x, first.y + j * Math.Sign(direction.y), first.z);
-                if (!points.Contains(target))
-                    points.Add(target);
-            }
-
-            for (int j = 0; j <= Mathf.Abs(direction.z); j++)
-            {
-                var target = new Vector3Int(second.x, second.y, first.z + j * Math.Sign(direction.z));
-                if (!points.Contains(target))
-                    points.Add(target);
-            }
-
-            return points;
-        }
-        
-        public static List<Vector3Int> GetPointsBetweenV2(Vector3Int first, Vector3Int second)
-        {
-            List<Vector3Int> points = new List<Vector3Int>();
-            var direction = second - first;
-            
-            // get all discrete integer points between first and second moving like in a manhattan distance
-            for (int j = 0; j <= Mathf.Abs(direction.z); j++)
-            {
-                var target = new Vector3Int(first.x, second.y, first.z + j * Math.Sign(direction.z));
-                if (!points.Contains(target))
-                    points.Add(target);
-            }
-
-            for (int j = 0; j <= Mathf.Abs(direction.y); j++)
-            {
-                var target = new Vector3Int(first.x, first.y + j * Math.Sign(direction.y), first.z);
-                if (!points.Contains(target))
-                    points.Add(target);
-            }
-
-            for (int j = 0; j <= Mathf.Abs(direction.x); j++)
-            {
-                var target = new Vector3Int(first.x + j * Math.Sign(direction.x), second.y, second.z);
-                if (!points.Contains(target))
-                    points.Add(target);
-            }
-
-            return points;
-        }
-
         private void OnDrawGizmos()
         {
             if (targetA == null || targetB == null) return;
@@ -236,12 +117,12 @@ namespace GridPlacement
             var a = targetA.position;
             var b = targetB.position;
             
-            var solutionA = GetPointsBetweenV1(
+            var solutionA = AssemblyLine.GetPointsBetweenV1(
                 new Vector3Int(Mathf.CeilToInt(a.x), Mathf.CeilToInt(a.y), Mathf.CeilToInt(a.z)), 
                 new Vector3Int(Mathf.CeilToInt(b.x), Mathf.CeilToInt(b.y), Mathf.CeilToInt(b.z))
             );
             
-            var solutionB = GetPointsBetweenV2(
+            var solutionB = AssemblyLine.GetPointsBetweenV2(
                 new Vector3Int(Mathf.CeilToInt(a.x), Mathf.CeilToInt(a.y), Mathf.CeilToInt(a.z)), 
                 new Vector3Int(Mathf.CeilToInt(b.x), Mathf.CeilToInt(b.y), Mathf.CeilToInt(b.z))
             );

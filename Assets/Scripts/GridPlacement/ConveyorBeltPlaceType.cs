@@ -31,6 +31,8 @@ namespace GridPlacement
         private bool SolutionA { get; set; } = true;
         private Vector3Int? startGridPosition;
         private List<Vector3Int> currentPreviewLine = new();
+
+        private AppendMode? appendMode;
         
         public ConveyorBeltPlaceType(PlaceTypeGrepper placeTypeGrep)
         {
@@ -54,22 +56,24 @@ namespace GridPlacement
 
         public void OnClickTriggered(Vector3Int currentGridPosition)
         {
-            var (appendMode, assemblyLine) = managers.AssemblyLineManager.GetOrCreate(currentGridPosition);
+            var (mode, assemblyLine) = managers.AssemblyLineManager.GetOrCreate(currentGridPosition);
             line = assemblyLine;
             line.Finished = false;
             
-            if (appendMode == AppendMode.InsertFront)
-                line.InsertFront(currentGridPosition, SolutionA);
-            else
-                line.AddNode(currentGridPosition, SolutionA);
-
+            appendMode = mode;
             startGridPosition = currentGridPosition;
         }
 
         public void OnClickReleased(Vector3Int currentGridPosition)
         {
+            if (startGridPosition == null) return;
             line.Finished = true;
-            line.AddNode(currentGridPosition, SolutionA);
+            
+            if (appendMode == AppendMode.Append)
+                line.AddConnection(startGridPosition.Value, currentGridPosition, SolutionA);
+            else
+                line.InsertFrontConnection(startGridPosition.Value, currentGridPosition, SolutionA);
+
             line = null;
 
             startGridPosition = null;
@@ -87,8 +91,8 @@ namespace GridPlacement
             if (!currentGridPosition.HasValue || !startGridPosition.HasValue) return;
             
             currentPreviewLine = SolutionA
-                ? AssemblyLineManager.GetPointsBetweenV1(startGridPosition.Value, currentGridPosition.Value)
-                : AssemblyLineManager.GetPointsBetweenV2(startGridPosition.Value, currentGridPosition.Value);
+                ? AssemblyLine.GetPointsBetweenV1(startGridPosition.Value, currentGridPosition.Value)
+                : AssemblyLine.GetPointsBetweenV2(startGridPosition.Value, currentGridPosition.Value);
 
             previewOptions.LineRenderer.positionCount = currentPreviewLine.Count;
             previewOptions.LineRenderer.SetPositions(currentPreviewLine.Select(

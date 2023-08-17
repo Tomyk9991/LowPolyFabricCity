@@ -1816,11 +1816,8 @@ MonoBehaviour:
       serializedVersion: 2
       m_Bits: 64
   inventoryPrefabs:
-  - {fileID: 919132149155446097, guid: f3d2e45dd13f9474996e657153e5ee98, type: 3}
   - {fileID: 919132149155446097, guid: 9f3d6ac33b114894abb1417cb1f352e4, type: 3}
   previewMaterial: {fileID: 2100000, guid: 418eacb575e629d449c049e844a744b1, type: 2}
-  assemblyLineManager: {fileID: 483559687}
-  lineRenderer: {fileID: 1477381981}
   placeTypes:
   - managers:
     - {fileID: 483559686}
