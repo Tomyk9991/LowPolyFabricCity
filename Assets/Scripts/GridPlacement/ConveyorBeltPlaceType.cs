@@ -1,5 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using Common.DataStructures;
+using ExtensionMethods;
 using FirstPersonPlayer;
 using FirstPersonPlayer.Statemachine;
 using GridPlacement.PlaceTypes;
@@ -94,12 +96,23 @@ namespace GridPlacement
                 ? AssemblyLine.GetPointsBetweenV1(startGridPosition.Value, currentGridPosition.Value)
                 : AssemblyLine.GetPointsBetweenV2(startGridPosition.Value, currentGridPosition.Value);
 
+            var positions = currentPreviewLine.Select(
+                a => new Vector3(a.x + gridOptions.gridOffset, a.y + 0.01f, a.z + gridOptions.gridOffset)
+            ).ToArray();
+            
             previewOptions.LineRenderer.positionCount = currentPreviewLine.Count;
-            previewOptions.LineRenderer.SetPositions(currentPreviewLine.Select(
-                    a => new Vector3(a.x + gridOptions.gridOffset, a.y + 0.01f, a.z + + gridOptions.gridOffset)
-                ).ToArray()
-            );
-                
+            previewOptions.LineRenderer.SetPositions(positions);
+
+            CustomGradient gradient = new CustomGradient();
+            
+            for (int i = 0; i < positions.Length; i++)
+            {
+                var t = (float) i / positions.Length;
+                gradient.AddKey(new GradientColorKey(i == 5 ? Color.red : Color.green, t));
+            }
+            
+            
+            previewOptions.LineRenderer.SetGradientFixed(gradient);
             previewOptions.LineRenderer.Simplify(.1f);
         }
     }

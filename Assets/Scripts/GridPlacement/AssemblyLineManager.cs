@@ -1,9 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using Common.Managers;
-using Unity.VisualScripting;
 using UnityEngine;
-using Vector3 = UnityEngine.Vector3;
 
 namespace GridPlacement
 {
@@ -22,6 +20,8 @@ namespace GridPlacement
         [Header("Assembly line settings")]
         [SerializeField] private GameObject assemblyLinePrefab;
         [SerializeField] private GameObject assemblyLineCornerPrefab;
+        [SerializeField] private Material assemblyLineMaterial;
+        
         
 
         [SerializeField] private float rotationOffset = 90.0f;
@@ -31,9 +31,20 @@ namespace GridPlacement
         [SerializeField] private Transform targetA;
         [SerializeField] private Transform targetB;
 
+        private Mesh[][] meshInstances;
+
         public void Awake()
         {
-            AssemblyLine.rotationOffset = this.rotationOffset;
+            AssemblyLine.rotationOffset = rotationOffset;
+        }
+
+        private void Start()
+        {
+            meshInstances = new[]
+            {
+                assemblyLinePrefab.GetComponentsInChildren<MeshFilter>().Select(t => t.sharedMesh).ToArray(),
+                assemblyLineCornerPrefab.GetComponentsInChildren<MeshFilter>().Select(t => t.sharedMesh).ToArray()
+            };
         }
         
 
@@ -65,47 +76,47 @@ namespace GridPlacement
         {
             if (!assemblyLine.Finished) return;
             
-            // remove every child in gameobject so it can be build from ground up
-            // this is a temporary solution
-            foreach (Transform child in assemblyLine.AttachedGameObject.transform)
-                Destroy(child.gameObject);
-
-            var meshesCount = assemblyLine.Connections.Sum(t => t.DiscretePoints.Count);
+            List<CombineInstance> combine = new();
             
-            MeshFilter[] meshFilters = new MeshFilter[meshesCount];
-            CombineInstance[] combine = new CombineInstance[meshFilters.Length];
-            Mesh[] meshInstances = {
-                assemblyLinePrefab.GetComponent<MeshFilter>().sharedMesh,
-                assemblyLineCornerPrefab.GetComponent<MeshFilter>().sharedMesh
-            };
-            
-            int i = 0;
             foreach (Connection connection in assemblyLine.Connections)
             {
                 foreach (PointRotation pointRotation in connection.DiscretePoints)
                 {
                     var point = pointRotation.Point;
                     var finalRotation = pointRotation.Rotation;
+                    finalRotation *= Quaternion.Euler(-90.0f, 0.0f, 0.0f);
+                    
                     int prefabInstanceIndex = 0;
                     
                     if (pointRotation.IsCorner)
                         prefabInstanceIndex = 1;
-                    
-                    combine[i].mesh = meshInstances[prefabInstanceIndex];
-                    combine[i].transform = Matrix4x4.TRS(point + placementOffset, finalRotation, Vector3.one);
-                    
-                    // var current = Instantiate(prefabInstanceIndex, point + placementOffset, finalRotation, assemblyLine.AttachedGameObject.transform);
-                    // current.name = $"AssemblyLine {point}";
-                    i++;
+
+
+                    for (int j = 0; j < meshInstances[prefabInstanceIndex].Length; j++)
+                    {
+                        CombineInstance instance = new()
+                        {
+                            mesh = meshInstances[prefabInstanceIndex][j],
+                            transform = Matrix4x4.TRS(point + placementOffset, finalRotation, Vector3.one * 100)
+                        };
+                        
+                        combine.Add(instance);
+                    }
                 }
             }
 
 
             Mesh mesh = new Mesh();
-            mesh.CombineMeshes(combine);
+            mesh.CombineMeshes(combine.ToArray());
             
             if (assemblyLine.AttachedGameObject.GetComponent<MeshFilter>() == null)
                 assemblyLine.AttachedGameObject.AddComponent<MeshFilter>();
+
+            if (assemblyLine.AttachedGameObject.GetComponent<MeshRenderer>() == null)
+            {
+                var r = assemblyLine.AttachedGameObject.AddComponent<MeshRenderer>();
+                r.material = assemblyLineMaterial;
+            }
             
             assemblyLine.AttachedGameObject.GetComponent<MeshFilter>().sharedMesh = mesh;
         }

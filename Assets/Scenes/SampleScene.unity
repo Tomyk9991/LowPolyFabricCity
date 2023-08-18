@@ -538,6 +538,8 @@ MonoBehaviour:
     type: 3}
   assemblyLineCornerPrefab: {fileID: 919132149155446097, guid: f3d2e45dd13f9474996e657153e5ee98,
     type: 3}
+  assemblyLineMaterial: {fileID: 2100000, guid: 1ed988615cb7455408d6e40a2e734670,
+    type: 2}
   rotationOffset: 90
   placementOffset: {x: -0.5, y: 0, z: -0.5}
   targetA: {fileID: 0}
@@ -1225,7 +1227,7 @@ LineRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 10306, guid: 0000000000000000f000000000000000, type: 0}
+  - {fileID: 2100000, guid: 074d4c33b5f7a4f4d82b440a6fb77364, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
